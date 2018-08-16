@@ -4,7 +4,14 @@ import json
 import serial
 from threading import Thread
 import binascii
+import pigpio
+import read_PWM
 
+sbc_stream = "\0" * 100
+port = serial.Serial("/dev/serial0", baudrate=19200, timeout=3.0)
+PWM_GPIO = 4
+pi = pigpio.pi()
+p = read_PWM.reader(pi, PWM_GPIO)
 
 def convert(number, sign, len, fp_index):
   try:
@@ -25,10 +32,10 @@ def convert(number, sign, len, fp_index):
     ret = ret * -1;
   return ret;
 
-
-sbc_stream = "\0" * 100
-
-port = serial.Serial("/dev/serial0", baudrate=19200, timeout=3.0)
+def convert_frequency_to_fuel_reading(f):
+  max_reading = 4800
+  min_reading = 1500
+  return 100-round(((f-min_reading)/(max_reading-min_reading)))*100 
 
 # TODO:add 100ms delay
 # TODO:create json here
@@ -41,16 +48,13 @@ def update_sbc_stream():
       sbc_stream = port.read_until(b'\xfc')
 
 
-app = Flask(__name__)
-api = Api(app)
-
 num = 0.0
 class Engine(Resource):
     def get(self):
         global sbc_stream
         global num 
         engine_data = {}
-        engine_data['FUEL'] = 0
+        engine_data['FUEL'] = convert_frequency_to_fuel_reading(p.frequency())
         engine_data['PWR'] = convert(sbc_stream[3:5], False, 16, 9)
         engine_data['RPM'] = convert(sbc_stream[7:9], False, 16, 4)
         engine_data['MANP'] = convert(sbc_stream[9:11], False, 16, 8)
@@ -94,6 +98,9 @@ class Engine(Resource):
         #   num = num + 1
         return Response(json.dumps(engine_data), status=200, mimetype='application/json')
 
+
+app = Flask(__name__)
+api = Api(app)
 @app.route("/")
 def index():  
     return render_template('index.html')
@@ -104,4 +111,4 @@ api.add_resource(Engine, '/engine')
 if __name__ == "__main__":
   thread = Thread(target = update_sbc_stream)
   thread.start()
-  app.run()
+  app.run(port=5005)
