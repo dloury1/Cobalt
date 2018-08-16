@@ -1,0 +1,498 @@
+<!Doctype HTML>
+<html lang="en">
+     <head>
+          <style>
+          /* This is a comment it is not read by any browser
+          This is where the css styling goes */
+
+          body{
+                   color:white;
+                   background-color:black;
+                   margin: 0;
+                   padding: 0;
+          }
+          </style>
+     </head>
+     <body>
+        <canvas id="myCanvas" width="480" height="796" style="background-color:black;">
+        <script>
+
+          var xmlhttp = new XMLHttpRequest();
+          var url = "http://127.0.0.1:5000/engine";
+
+          xmlhttp.onreadystatechange = function() {
+              if (this.readyState == 4 && this.status == 200) {
+                  var myArr = JSON.parse(this.responseText);
+                  renderEngineData(myArr);
+              }
+          };
+
+          setInterval(function(){
+            xmlhttp.open("GET", url, true);
+            xmlhttp.send();
+          }, 100);
+
+          function decToTime(minutes){
+            var hour = Math.floor(Math.abs(minutes));
+            var min = Math.floor((Math.abs(minutes) * 60) % 60);
+            return (hour < 10 ? "0" : "") + hour + "h " + (min < 10 ? "0" : "") + min+ "m";
+          }
+
+
+          function renderEngineData(engine_data) {
+                FUEL = engine_data["FUEL"];
+                POWER = engine_data["PWR"];
+          			RPM = engine_data["RPM"];
+          			MANP = engine_data["MANP"];
+          			FUELP = engine_data["FUELP"];
+          			OILP = engine_data["OILP"];
+          			OILT = engine_data["OILT"];
+                CHT1 = engine_data["CHT1"];
+                CHT2 = engine_data["CHT2"];
+                CHT3 = engine_data["CHT3"];
+                CHT4 = engine_data["CHT4"];
+                CHT5 = engine_data["CHT5"];
+                CHT6 = engine_data["CHT6"];
+          			EGT1 = engine_data["EGT1"];
+          			EGT2 = engine_data["EGT2"];
+          			EGT3 = engine_data["EGT3"];
+          			EGT4 = engine_data["EGT4"];
+          			EGT5 = engine_data["EGT5"];
+          			EGT6 = engine_data["EGT6"];
+          			var c = document.getElementById("myCanvas");
+          			var ctx = c.getContext("2d");
+            
+                ctx.clearRect(0, 0, 480, 796);
+                ctx.textAlign="center";
+                // FUEL
+                ctx.rect(20,20,215,250);
+                ctx.rect(20,70,215,1);
+                ctx.font = "15px Arial";
+                ctx.fillStyle = "#C2D49D";
+                ctx.fillText("FUEL",60,55);
+                
+                BARHEIGHT = FUEL
+                grd = ctx.createLinearGradient(0, 130, 0, 230);
+                grd.addColorStop(1, "black");
+                if (FUEL < 20) {
+                 grd.addColorStop(0, "red");
+                } else if (FUEL >= 20 && FUEL < 40) {
+                 grd.addColorStop(0, "yellow");
+                } else {
+                 grd.addColorStop(0, "#C2D49D");
+                }
+                ctx.fillStyle = grd;
+                ctx.fillRect(60, 210-BARHEIGHT, 30, BARHEIGHT);
+                ctx.rect(60,110,30,100);
+                ctx.font = "15px Arial";
+                ctx.fillStyle = "#C2D49D";
+
+                ctx.fillText("14.2 USG/h",90,250)
+                ctx.fillText(FUEL.toFixed(1)+" USG",160,140)
+                ctx.fillText("= "+decToTime(FUEL/14.2),160,180)
+
+
+                // POWER
+                ctx.rect(245,20,215,250);
+                ctx.rect(245,70,215,1);
+                ctx.fillStyle = "#C2D49D";
+                ctx.fillText("POWER CRUISE",325,55);
+                ctx.font = "60px Arial";
+                ctx.fillStyle = "#C2D49D";
+                ctx.fillText(Math.round(POWER)+"%",345,180)
+
+                // MID CONSOLE
+                ctx.rect(20,285,440,200);
+                ctx.strokeStyle="gray";
+                ctx.stroke();
+
+                // RPM
+                ctx.beginPath();
+                ctx.lineWidth=4;
+                ctx.strokeStyle="GRAY";
+                ctx.arc(80, 390, 45, 0.9 * Math.PI, 2.1 * Math.PI);
+                ctx.stroke();
+                ctx.beginPath();
+                if (RPM < 700) {
+                 ctx.strokeStyle="White";
+                 ctx.fillStyle = "White";
+                } else if (RPM > 2600) {
+                 ctx.strokeStyle="Red";
+                 ctx.fillStyle = "Red";
+                } else {
+                 ctx.strokeStyle="#C2D49D";
+                 ctx.fillStyle = "#C2D49D";
+                }
+                ctx.arc(80, 390, 45, 0.9 * Math.PI, (0.9+RPM/2700*1.2) * Math.PI);
+                ctx.stroke();
+                ctx.font = "20px Arial"; 
+                ctx.fillText(Math.round(RPM),80,395)
+                ctx.font = "13px Arial";
+                ctx.fillText("RPM",80,412)
+
+                // MAN P       
+                ctx.beginPath();
+                ctx.strokeStyle="GRAY";
+                ctx.arc(185, 390, 45, 0.9 * Math.PI, 2.1 * Math.PI);
+                ctx.stroke();
+                ctx.beginPath();
+                if (MANP < 14.9) {
+                 ctx.strokeStyle="White";
+                 ctx.fillStyle = "White";
+                } else if (MANP > 39.6) {
+                 ctx.strokeStyle="Red";
+                 ctx.fillStyle = "Red";
+                } else {
+                 ctx.strokeStyle="#C2D49D";
+                 ctx.fillStyle = "#C2D49D";
+                }
+                ctx.arc(185, 390, 45, 0.9 * Math.PI, (0.9+MANP/45*1.2) * Math.PI);
+                ctx.stroke();
+                ctx.font = "20px Arial";
+                ctx.fillText(MANP.toFixed(1),185,395);
+                ctx.font = "13px Arial";
+                ctx.fillText("InHg",185,412);
+                ctx.font = "15px Arial";
+                ctx.fillText("MAN P",187,440);
+
+                // FUEL P
+                ctx.beginPath();
+                ctx.strokeStyle="GRAY";
+                ctx.arc(290, 390, 45, 0.9 * Math.PI, 2.1 * Math.PI);
+                ctx.stroke();
+                ctx.beginPath();
+                if (FUELP < 25 || (FUELP > 85 && FUELP < 100)) {
+                 ctx.strokeStyle="Yellow";
+                 ctx.fillStyle = "Yellow";
+                } else if (FUELP >= 100) {
+                 ctx.strokeStyle="Red";
+                 ctx.fillStyle = "Red";
+                } else {
+                 ctx.strokeStyle="#C2D49D";
+                 ctx.fillStyle = "#C2D49D";
+                }
+                ctx.arc(290, 390, 45, 0.9 * Math.PI, (0.9+FUELP/120*1.2) * Math.PI);
+                ctx.stroke();
+                ctx.font = "20px Arial";
+                ctx.fillText(Math.round(FUELP),290,395);
+                ctx.font = "13px Arial";
+                ctx.fillText("PSI",290,412);
+                ctx.font = "15px Arial";
+                ctx.fillText("FUEL P",290,440);
+
+                // OIL P
+                ctx.beginPath();
+                ctx.strokeStyle="GRAY";
+                ctx.arc(395, 390, 45, 0.9 * Math.PI, 2.1 * Math.PI);
+                ctx.stroke();
+                ctx.beginPath();
+                if ((OILP >= 10 && OILP < 30) || (OILP > 61 && OILP < 100)) {
+                 ctx.strokeStyle="Yellow";
+                 ctx.fillStyle = "Yellow";
+                } else if ((OILP > 0 && OILP < 10) || OILP >= 100) {
+                 ctx.strokeStyle="Red";
+                 ctx.fillStyle = "Red";
+                } else {
+                 ctx.strokeStyle="#C2D49D";
+                 ctx.fillStyle = "#C2D49D";
+                }
+                ctx.arc(395, 390, 45, 0.9 * Math.PI, (0.9+OILP/110*1.2) * Math.PI);
+                ctx.stroke();
+                ctx.font = "20px Arial";
+                ctx.fillText(Math.round(OILP),395,395);
+                ctx.font = "13px Arial";
+                ctx.fillText("PSI",395,412);
+                ctx.font = "15px Arial";
+                ctx.fillText("OIL P",395,440)
+
+                // BOTTOM CONSOLE
+                ctx.beginPath();
+                ctx.lineWidth=1;
+                ctx.rect(20,500,440,280);
+                ctx.strokeStyle="gray";
+                ctx.stroke();
+
+                //CHT1
+                BARHEIGHT = CHT1/500*200
+                grd = ctx.createLinearGradient(0, 620, 0, 750);
+                grd.addColorStop(1, "black");
+                if (CHT1 < 239) {
+                 grd.addColorStop(0, "white");
+                } else if (CHT1 > 421 && CHT1 < 460) {
+                 grd.addColorStop(0, "yellow");
+                } else if (CHT1 >= 460) {
+                 grd.addColorStop(0, "red");
+                } else {
+                     grd.addColorStop(0, "#C2D49D");
+                }
+                ctx.fillStyle = grd;
+                ctx.fillRect(75, 740-BARHEIGHT, 10, BARHEIGHT);
+                //CHT2
+                BARHEIGHT = CHT2/500*200
+                grd = ctx.createLinearGradient(0, 620, 0, 750);
+                grd.addColorStop(1, "black");
+                if (CHT2 < 239) {
+                 grd.addColorStop(0, "white");
+                } else if (CHT2 > 421 && CHT2 < 460) {
+                 grd.addColorStop(0, "yellow");
+                } else if (CHT2 >= 460) {
+                 grd.addColorStop(0, "red");
+                } else {
+                     grd.addColorStop(0, "#C2D49D");
+                }
+                ctx.fillStyle = grd;
+                ctx.fillRect(95, 740-BARHEIGHT, 10, BARHEIGHT);
+                //CHT3
+                BARHEIGHT = CHT3/500*200
+                grd = ctx.createLinearGradient(0, 620, 0, 750);
+                grd.addColorStop(1, "black");
+                if (CHT3 < 239) {
+                 grd.addColorStop(0, "white");
+                } else if (CHT3 > 421 && CHT3 < 460) {
+                 grd.addColorStop(0, "yellow");
+                } else if (CHT3 >= 460) {
+                 grd.addColorStop(0, "red");
+                } else {
+                     grd.addColorStop(0, "#C2D49D");
+                }
+                ctx.fillStyle = grd;
+                ctx.fillRect(115, 740-BARHEIGHT, 10, BARHEIGHT);
+                //CHT4
+                BARHEIGHT = CHT4/500*200
+                grd = ctx.createLinearGradient(0, 620, 0, 750);
+                grd.addColorStop(1, "black");
+                if (CHT4 < 239) {
+                 grd.addColorStop(0, "white");
+                } else if (CHT4 > 421 && CHT4 < 460) {
+                 grd.addColorStop(0, "yellow");
+                } else if (CHT4 >= 460) {
+                 grd.addColorStop(0, "red");
+                } else {
+                     grd.addColorStop(0, "#C2D49D");
+                }
+                ctx.fillStyle = grd;
+                ctx.fillRect(135, 740-BARHEIGHT, 10, BARHEIGHT);
+                //CHT5
+                BARHEIGHT = CHT5/500*200
+                grd = ctx.createLinearGradient(0, 620, 0, 750);
+                grd.addColorStop(1, "black");
+                if (CHT5 < 239) {
+                 grd.addColorStop(0, "white");
+                } else if (CHT5 > 421 && CHT5 < 460) {
+                 grd.addColorStop(0, "yellow");
+                } else if (CHT5 >= 460) {
+                 grd.addColorStop(0, "red");
+                } else {
+                     grd.addColorStop(0, "#C2D49D");
+                }
+                ctx.fillStyle = grd;
+                ctx.fillRect(155, 740-BARHEIGHT, 10, BARHEIGHT);
+                //CHT6
+                BARHEIGHT = CHT6/500*200
+                grd = ctx.createLinearGradient(0, 620, 0, 750);
+                grd.addColorStop(1, "black");
+                if (CHT6 < 239) {
+                 grd.addColorStop(0, "white");
+                } else if (CHT6 > 421 && CHT6 < 460) {
+                 grd.addColorStop(0, "yellow");
+                } else if (CHT6 >= 460) {
+                 grd.addColorStop(0, "red");
+                } else {
+                     grd.addColorStop(0, "#C2D49D");
+                }
+                ctx.fillStyle = grd;
+                ctx.fillRect(175, 740-BARHEIGHT, 10, BARHEIGHT);
+
+                ctx.font = "15px Arial";
+                ctx.fillStyle = "#C2D49D";
+                ctx.fillText("CHT",130,760);
+                
+                // RED LINE
+                ctx.beginPath();
+                ctx.moveTo(70,555);
+                ctx.lineTo(195,555);
+                ctx.strokeStyle="red";
+                ctx.stroke();ctx.stroke();ctx.stroke();
+
+                // YELLOW LINE
+                ctx.beginPath();
+                ctx.moveTo(70,572);
+                ctx.lineTo(195,572);
+                ctx.strokeStyle="yellow";
+                ctx.stroke();ctx.stroke();ctx.stroke();
+                
+                // GREEN LINE
+                ctx.beginPath();
+                ctx.moveTo(70,645);
+                ctx.lineTo(195,645);
+                ctx.strokeStyle="#C2D49D";
+                ctx.stroke();ctx.stroke();ctx.stroke();
+
+
+                //OIL T
+                BARHEIGHT = OILT/250*200
+                ctx.beginPath();
+                grd = ctx.createLinearGradient(0, 620, 0, 750);
+                grd.addColorStop(1, "black");
+                if (OILT < 100 || (OILT > 221 && OILT < 240)) {
+                 grd.addColorStop(0, "yellow");
+                } else if (OILT >= 240) {
+                 grd.addColorStop(0, "red");
+                } else {
+                	 grd.addColorStop(0, "#C2D49D");
+                }
+                ctx.fillStyle = grd;
+                ctx.fillRect(235, 740-BARHEIGHT, 20, BARHEIGHT);
+
+                // RED LINE    
+                ctx.moveTo(225,550);
+                ctx.lineTo(265,550);
+                ctx.strokeStyle="red";
+                ctx.stroke();ctx.stroke();ctx.stroke();
+
+                //TOP YELLOW
+                ctx.beginPath();
+                ctx.moveTo(225,565);
+                ctx.lineTo(265,565);
+                ctx.strokeStyle="yellow";
+                ctx.stroke();ctx.stroke();ctx.stroke();
+
+                // GREEN YELLOW
+                ctx.beginPath();
+                ctx.moveTo(225,660);
+                ctx.lineTo(265,660);
+                ctx.strokeStyle="#C2D49D";
+                ctx.stroke();ctx.stroke();ctx.stroke();         
+
+                ctx.font = "15px Arial";
+                ctx.fillStyle = "#C2D49D";
+                ctx.fillText("OIL T",245,760);
+
+                //EGT1
+                BARHEIGHT = EGT1/1800*200
+                grd = ctx.createLinearGradient(0, 620, 0, 750);
+                grd.addColorStop(1, "black");
+                if (EGT1 > 1651 && EGT1 < 1700) {
+                 grd.addColorStop(0, "yellow");
+                } else if (EGT1 >= 1700) {
+                 grd.addColorStop(0, "red");
+                } else {
+                	 grd.addColorStop(0, "#C2D49D");
+                }
+                ctx.fillStyle = grd;
+                ctx.fillRect(305, 740-BARHEIGHT, 10, BARHEIGHT);
+                //EGT2
+                BARHEIGHT = EGT2/1800*200
+                grd = ctx.createLinearGradient(0, 620, 0, 750);
+                grd.addColorStop(1, "black");
+                if (EGT2 > 1651 && EGT2 < 1700) {
+                 grd.addColorStop(0, "yellow");
+                } else if (EGT2 >= 1700) {
+                 grd.addColorStop(0, "red");
+                } else {
+                	 grd.addColorStop(0, "#C2D49D");
+                }
+                ctx.fillStyle = grd;
+                ctx.fillRect(325, 740-BARHEIGHT, 10, BARHEIGHT);
+                //EGT3
+                BARHEIGHT = EGT3/1800*200
+                grd = ctx.createLinearGradient(0, 620, 0, 750);
+                grd.addColorStop(1, "black");
+                if (EGT3 > 1651 && EGT3 < 1700) {
+                 grd.addColorStop(0, "yellow");
+                } else if (EGT3 >= 1700) {
+                 grd.addColorStop(0, "red");
+                } else {
+                	 grd.addColorStop(0, "#C2D49D");
+                }
+                ctx.fillStyle = grd;
+                ctx.fillRect(345, 740-BARHEIGHT, 10, BARHEIGHT);
+                //EGT4
+                BARHEIGHT = EGT4/1800*200
+                grd = ctx.createLinearGradient(0, 620, 0, 750);
+                grd.addColorStop(1, "black");
+                if (EGT4 > 1651 && EGT4 < 1700) {
+                 grd.addColorStop(0, "yellow");
+                } else if (EGT4 >= 1700) {
+                 grd.addColorStop(0, "red");
+                } else {
+                	 grd.addColorStop(0, "#C2D49D");
+                }
+                ctx.fillStyle = grd;
+                ctx.fillRect(365, 740-BARHEIGHT, 10, BARHEIGHT);
+                //EGT5
+                BARHEIGHT = EGT5/1800*200
+                grd = ctx.createLinearGradient(0, 620, 0, 750);
+                grd.addColorStop(1, "black");
+                if (EGT5 > 1651 && EGT5 < 1700) {
+                 grd.addColorStop(0, "yellow");
+                } else if (EGT5 >= 1700) {
+                 grd.addColorStop(0, "red");
+                } else {
+                	 grd.addColorStop(0, "#C2D49D");
+                }
+                ctx.fillStyle = grd;
+                ctx.fillRect(385, 740-BARHEIGHT, 10, BARHEIGHT);
+                //EGT6
+                BARHEIGHT = EGT6/1800*200
+                grd = ctx.createLinearGradient(0, 620, 0, 750);
+                grd.addColorStop(1, "black");
+                if (EGT6 > 1651 && EGT6 < 1700) {
+                 grd.addColorStop(0, "yellow");
+                } else if (EGT6 >= 1700) {
+                 grd.addColorStop(0, "red");
+                } else {
+                	 grd.addColorStop(0, "#C2D49D");
+                }
+                ctx.fillStyle = grd;
+                ctx.fillRect(405, 740-BARHEIGHT, 10, BARHEIGHT);
+
+                // RED LINE
+                ctx.beginPath();
+                ctx.fillStyle = grd;
+                ctx.beginPath();
+                ctx.moveTo(300,550);
+                ctx.lineTo(425,550);
+                ctx.strokeStyle="red";
+                ctx.stroke();ctx.stroke();ctx.stroke();
+
+                // YELLOW LINE
+                ctx.beginPath();
+                ctx.moveTo(300,557);
+                ctx.lineTo(425,557);
+                ctx.strokeStyle="yellow";
+                ctx.stroke();ctx.stroke();ctx.stroke();
+
+                ctx.font = "15px Arial";
+                ctx.fillStyle = "#C2D49D";
+                ctx.fillText("EGT",360,760);
+
+                // Bar labels to be moved to appropriate sections later
+                ctx.font = "13px Arial";
+                ctx.fillStyle = "yellow";
+                ctx.fillText("1650",440, 562);
+
+                ctx.font = "13px Arial";
+                ctx.fillStyle = "#C2D49D";
+                ctx.fillText("100",278, 664);
+                ctx.font = "13px Arial";
+                ctx.fillStyle = "yellow";
+                ctx.fillText("220",278, 570);
+
+                ctx.font = "13px Arial";
+                ctx.fillStyle = "#C2D49D";
+                ctx.fillText("240",208, 650);
+                ctx.font = "13px Arial";
+                ctx.fillStyle = "yellow";
+                ctx.fillText("420",208, 577);
+
+          }
+            
+
+ 
+        </script>
+     </body>
+<script type="text/javascript">
+    document.body.style.cursor = 'none';
+</script>
+</html>
