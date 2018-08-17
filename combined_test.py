@@ -12,7 +12,7 @@ def convert(number, sign, len, fp_index):
     number = int(number.encode('hex'), 16)
   except ValueError:
         print 'Invalid value!'
-        return 0
+        return -0.1
   ret = 0;
   mask_index = len - 1;
   if (sign):
@@ -47,14 +47,17 @@ def update_sbc_stream():
   time_since_last_read = 0
   global engine_data
   while True:
-    engine_data = {'FUEL': 0, 'PWR': 0, 'RPM': 0, 'MANP': 0, 'FUELP': 0, 
-      'OILP': 0, 'OILT': 0, 'CHT1': 0, 'CHT2': 0,  'CHT3': 0, 
-      'CHT4': 0, 'CHT5': 0, 'CHT6': 0, 'EGT1': 0, 'EGT2': 0, 
-      'EGT3': 0, 'EGT4': 0, 'EGT5': 0, 'EGT6': 0, 'ERROR':[]}
     time.sleep(0.1)
+    # Reset data, show stale data when data is not coming in?
+    # engine_data = {'FUEL': 0, 'PWR': 0, 'RPM': 0, 'MANP': 0, 'FUELP': 0, 
+    #   'OILP': 0, 'OILT': 0, 'CHT1': 0, 'CHT2': 0,  'CHT3': 0, 
+    #   'CHT4': 0, 'CHT5': 0, 'CHT6': 0, 'EGT1': 0, 'EGT2': 0, 
+    #   'EGT3': 0, 'EGT4': 0, 'EGT5': 0, 'EGT6': 0, 'ERROR':[]}
     if port.in_waiting:
-      sbc_stream = port.read_until(b'\xfc')
-      if sbc_stream[0] == 0xfd and sbc_stream[1] == 0xfe and sbc_stream[2] == 0xff:
+      port.read_until(b'\xfc')
+      sbc_stream = port.read(3)
+      if sbc_stream[0].encode("hex") == "fd" and sbc_stream[1].encode("hex") == "fe" and sbc_stream[2].encode("hex") == "ff":
+        sbc_stream = sbc_stream + port.read(94)
         engine_data['FUEL'] = 0
         engine_data['PWR'] = convert(sbc_stream[3:5], False, 16, 9)
         engine_data['RPM'] = convert(sbc_stream[7:9], False, 16, 4)
@@ -77,6 +80,8 @@ def update_sbc_stream():
         file.write(time.strftime("%Y/%m/%d-%H:%M:%S::"))
         file.write(json.dumps(engine_data))
         file.write("\n")
+        file.write(binascii.hexlify(sbc_stream))
+        file.write("\n")
         time_since_last_read = 0
     else:
       time_since_last_read = time_since_last_read + 1
@@ -95,7 +100,6 @@ api = Api(app)
 class Engine(Resource):
     def get(self):
         global engine_data
-
         return Response(json.dumps(engine_data), status=200, mimetype='application/json')
 
 @app.route("/")
@@ -108,4 +112,4 @@ api.add_resource(Engine, '/engine')
 if __name__ == "__main__":
   thread = Thread(target = update_sbc_stream)
   thread.start()
-  app.run(port=5005)
+  app.run(port=5000)
