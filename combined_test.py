@@ -42,7 +42,7 @@ port = serial.Serial("/dev/serial0", baudrate=19200, timeout=3.0)
 # TODO: Handle case where no read in 3 seonds DONE?
 # TODO: Come up with new architecture to read data DONE?
 def update_sbc_stream():
-  filename  = time.strftime("log/%Y%m%d-%H%M%S")
+  filename  = time.strftime("/home/pi/Cobalt/log/%Y%m%d-%H%M%S")
   file = open(filename,"w+",0)
   time_since_last_read = 0
   global engine_data
