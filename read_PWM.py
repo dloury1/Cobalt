@@ -109,7 +109,7 @@ if __name__ == "__main__":
 
    PWM_GPIO = 4
    RUN_TIME = 60.0
-   SAMPLE_TIME = 0.1
+   SAMPLE_TIME = 2.0
 
    pi = pigpio.pi()
 

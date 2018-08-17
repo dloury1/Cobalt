@@ -5,6 +5,8 @@ import serial
 from threading import Thread
 import binascii
 import time
+import pigpio
+import read_PWM
 
 
 def convert(number, sign, len, fp_index):
@@ -26,6 +28,16 @@ def convert(number, sign, len, fp_index):
     ret = ret * -1;
   return ret;
 
+
+PWM_GPIO = 4
+pi = pigpio.pi()
+p = read_PWM.reader(pi, PWM_GPIO)
+
+def convert_frequency_to_fuel_reading(f):
+  f = f - f%200
+  slope = -0.09416195857
+  intercept = 420
+  return round(slope*f+intercept)
 
 
 engine_data = {'FUEL': 0, 'PWR': 0, 'RPM': 0, 'MANP': 0, 'FUELP': 0, 
@@ -59,6 +71,7 @@ def update_sbc_stream():
       if sbc_stream[0].encode("hex") == "fd" and sbc_stream[1].encode("hex") == "fe" and sbc_stream[2].encode("hex") == "ff":
         sbc_stream = sbc_stream + port.read(94)
         engine_data['FUEL'] = 0
+        engine_data['FUEL'] = convert_frequency_to_fuel_reading(p.frequency())
         engine_data['PWR'] = convert(sbc_stream[3:5], False, 16, 9)
         engine_data['RPM'] = convert(sbc_stream[7:9], False, 16, 4)
         engine_data['MANP'] = convert(sbc_stream[9:11], False, 16, 8)
