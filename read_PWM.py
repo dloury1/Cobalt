@@ -77,57 +77,6 @@ class reader:
       else:
          return 0.0
 
-   def pulse_width(self):
-      """
-      Returns the PWM pulse width in microseconds.
-      """
-      if self._high is not None:
-         return self._high
-      else:
-         return 0.0
 
-   def duty_cycle(self):
-      """
-      Returns the PWM duty cycle percentage.
-      """
-      if self._high is not None:
-         return 100.0 * self._high / self._period
-      else:
-         return 0.0
 
-   def cancel(self):
-      """
-      Cancels the reader and releases resources.
-      """
-      self._cb.cancel()
-
-if __name__ == "__main__":
-
-   import time
-   import pigpio
-   import read_PWM
-
-   PWM_GPIO = 4
-   RUN_TIME = 60.0
-   SAMPLE_TIME = 2.0
-
-   pi = pigpio.pi()
-
-   p = read_PWM.reader(pi, PWM_GPIO)
-
-   start = time.time()
-
-   while (time.time() - start) < RUN_TIME:
-
-      time.sleep(SAMPLE_TIME)
-
-      f = p.frequency()
-      pw = p.pulse_width()
-      dc = p.duty_cycle()
-     
-      print("f={:.1f} pw={} dc={:.2f}".format(f, int(pw+0.5), dc))
-
-   p.cancel()
-
-   pi.stop()
 
