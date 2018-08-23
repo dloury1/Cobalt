@@ -8,6 +8,19 @@ import time
 import pigpio
 import read_PWM
 
+PWM_GPIO = 4
+pi = pigpio.pi()
+p = read_PWM.reader(pi, PWM_GPIO)
+scale = 100
+frequencies = []
+frequencies_index = 0
+port = serial.Serial("/dev/serial0", baudrate=19200, timeout=3.0)
+
+engine_data = {'FUEL': 0, 'PWR': 0, 'RPM': 0, 'MANP': 0, 'FUELP': 0, 
+      'OILP': 0, 'OILT': 0, 'CHT1': 0, 'CHT2': 0,  'CHT3': 0, 
+      'CHT4': 0, 'CHT5': 0, 'CHT6': 0, 'EGT1': 0, 'EGT2': 0, 
+      'EGT3': 0, 'EGT4': 0, 'EGT5': 0, 'EGT6': 0, 'ERROR':[] }
+
 
 def convert(number, sign, len, fp_index):
   try:
@@ -29,30 +42,18 @@ def convert(number, sign, len, fp_index):
   return ret;
 
 
-PWM_GPIO = 4
-pi = pigpio.pi()
-p = read_PWM.reader(pi, PWM_GPIO)
+def get_fuel_reading():
+  global frequencies, frequencies_index
+  frequencies[frequencies_index%scale] =  p.frequency()
+  frequencies_index = (frequencies_index + 1)
+  frequency = reduce(lambda x, y: x + y, frequencies) / len(frequencies)
+  fuel_reading = round(109*(4650-frequency)/(4650-3000))
+  if fuel_reading < 0:
+    return 0
+  else:
+    return fuel_reading
 
-def convert_frequency_to_fuel_reading(f):
-  f = f - f%200
-  slope = -0.09416195857
-  intercept = 420
-  return round(slope*f+intercept)
 
-
-engine_data = {'FUEL': 0, 'PWR': 0, 'RPM': 0, 'MANP': 0, 'FUELP': 0, 
-      'OILP': 0, 'OILT': 0, 'CHT1': 0, 'CHT2': 0,  'CHT3': 0, 
-      'CHT4': 0, 'CHT5': 0, 'CHT6': 0, 'EGT1': 0, 'EGT2': 0, 
-      'EGT3': 0, 'EGT4': 0, 'EGT5': 0, 'EGT6': 0, 'ERROR':[] }
-
-port = serial.Serial("/dev/serial0", baudrate=19200, timeout=3.0)
-
-# TODO:add 100ms delay DONE?
-# TODO:create json here DONE?
-# TODO:save to file DONE?
-# TODO:Check for additional sync bytes DONE?
-# TODO: Handle case where no read in 3 seonds DONE?
-# TODO: Come up with new architecture to read data DONE?
 def update_sbc_stream():
   filename  = time.strftime("/home/pi/Cobalt/log/%Y%m%d-%H%M%S")
   file = open(filename,"w+",0)
@@ -60,18 +61,13 @@ def update_sbc_stream():
   global engine_data
   while True:
     time.sleep(0.1)
-    # Reset data, show stale data when data is not coming in?
-    # engine_data = {'FUEL': 0, 'PWR': 0, 'RPM': 0, 'MANP': 0, 'FUELP': 0, 
-    #   'OILP': 0, 'OILT': 0, 'CHT1': 0, 'CHT2': 0,  'CHT3': 0, 
-    #   'CHT4': 0, 'CHT5': 0, 'CHT6': 0, 'EGT1': 0, 'EGT2': 0, 
-    #   'EGT3': 0, 'EGT4': 0, 'EGT5': 0, 'EGT6': 0, 'ERROR':[]}
+    engine_data['FUEL'] = get_fuel_reading()
     if port.in_waiting:
       port.read_until(b'\xfc')
       sbc_stream = port.read(3)
       if sbc_stream[0].encode("hex") == "fd" and sbc_stream[1].encode("hex") == "fe" and sbc_stream[2].encode("hex") == "ff":
         sbc_stream = sbc_stream + port.read(94)
         engine_data['FUEL'] = 0
-        engine_data['FUEL'] = convert_frequency_to_fuel_reading(p.frequency())
         engine_data['PWR'] = convert(sbc_stream[3:5], False, 16, 9)
         engine_data['RPM'] = convert(sbc_stream[7:9], False, 16, 4)
         engine_data['MANP'] = convert(sbc_stream[9:11], False, 16, 8)
@@ -102,27 +98,26 @@ def update_sbc_stream():
     if time_since_last_read > 10:
       engine_data['ERROR'] = ["No data in 3 seconds"]
       file.write(time.strftime("%Y/%m/%d-%H:%M:%S::"))
+      file.write("\n")
       file.write(json.dumps(engine_data))
       file.write("\n")
       time_since_last_read = 0
-
-
-app = Flask(__name__)
-api = Api(app)
 
 class Engine(Resource):
     def get(self):
         global engine_data
         return Response(json.dumps(engine_data), status=200, mimetype='application/json')
 
+app = Flask(__name__)
+api = Api(app)
+api.add_resource(Engine, '/engine')
 @app.route("/")
 def index():  
     return render_template('index.html')
 
-
-api.add_resource(Engine, '/engine')
-
 if __name__ == "__main__":
+  time.sleep(0.2)
+  frequencies = [p.frequency()] * scale
   thread = Thread(target = update_sbc_stream)
   thread.start()
   app.run(port=5000)
