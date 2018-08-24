@@ -1,0 +1,14 @@
+Setup the correct environment in pi
+  Install Pi GPIO
+    sudo apt-get update 
+    sudo apt-get install pigpio python-pigpio
+
+  Clone this repo /home/pi directory
+
+  Goto pi_config folder, using file_names directory
+  copy the files to the corresponding system folder
+
+  Install Python dependencies
+    pip install flask flask_restful
+
+Now the cobalt script and the Chrome browser should as GUI on startup

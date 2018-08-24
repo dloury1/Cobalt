@@ -8,19 +8,25 @@ import time
 import pigpio
 import read_PWM
 
-PWM_GPIO = 4
+# GPIO pin to read the frequency from fuel sensor
+FUELSENSOR_GPIO = 4
 pi = pigpio.pi()
-p = read_PWM.reader(pi, PWM_GPIO)
-scale = 100
+fuelsensor_input = read_PWM.reader(pi, FUELSENSOR_GPIO)
+# Length of low pass filter
+frequencies_length = 100
+# Circular buffer to store previous n frequencies
 frequencies = []
+# Index to keep track of the oldest frequency to be replaced
 frequencies_index = 0
 port = serial.Serial("/dev/serial0", baudrate=19200, timeout=3.0)
 
+# Starting value for the engine data
 engine_data = {'FUEL': 0, 'PWR': 0, 'RPM': 0, 'MANP': 0, 'FUELP': 0, 
       'OILP': 0, 'OILT': 0, 'CHT1': 0, 'CHT2': 0,  'CHT3': 0, 
       'CHT4': 0, 'CHT5': 0, 'CHT6': 0, 'EGT1': 0, 'EGT2': 0, 
       'EGT3': 0, 'EGT4': 0, 'EGT5': 0, 'EGT6': 0, 'ERRORS':[] }
 
+# All the possible faults 
 faults = {  0: "Manifold Pressure Sensor Fault",
             1: "Fuel Pressure Sensor Fault",
             2: "Manifold Temperature Sensor Fault",
@@ -59,6 +65,7 @@ faults = {  0: "Manifold Pressure Sensor Fault",
 }
 
 
+# Returns an array of faults
 def get_errors(number):
   try:
     number = int(number.encode('hex'), 16)
@@ -72,7 +79,7 @@ def get_errors(number):
   return ret
 
 
-
+# Converts numbers into format specified by SBC
 def convert(number, sign, len, fp_index):
   try:
     number = int(number.encode('hex'), 16)
@@ -93,9 +100,10 @@ def convert(number, sign, len, fp_index):
   return ret;
 
 
+# Runs low pass filter on the fuel sensor frequency reading and converts it to gallon reading
 def get_fuel_reading():
   global frequencies, frequencies_index
-  frequencies[frequencies_index%scale] =  p.frequency()
+  frequencies[frequencies_index%frequencies_length] =  fuelsensor_input.frequency()
   frequencies_index = (frequencies_index + 1)
   frequency = reduce(lambda x, y: x + y, frequencies) / len(frequencies)
   fuel_reading = round(109*(4650-frequency)/(4650-3000))
@@ -104,7 +112,8 @@ def get_fuel_reading():
   else:
     return fuel_reading
 
-
+# Periodically reads the engine data from UART, writes data to file and stores into global variable
+# engine_data for server to share with client
 def update_sbc_stream():
   filename  = time.strftime("/home/pi/Cobalt/log/%Y%m%d-%H%M%S")
   file = open(filename,"w+",0)
@@ -147,6 +156,7 @@ def update_sbc_stream():
     else:
       time_since_last_read = time_since_last_read + 1
 
+    # If no data has been received for over 1 second then error is added for client to display
     if time_since_last_read > 10:
       engine_data['ERRORS'] = ["No data in "+ str(time_since_last_read/10) +" seconds"]
       file.write(time.strftime("%Y/%m/%d-%H:%M:%S::"))
@@ -168,7 +178,7 @@ def index():
 
 if __name__ == "__main__":
   time.sleep(0.2)
-  frequencies = [p.frequency()] * scale
+  frequencies = [fuelsensor_input.frequency()] * frequencies_length
   thread = Thread(target = update_sbc_stream)
   thread.start()
   app.run(port=5000)

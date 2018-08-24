@@ -1,0 +1,9 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Application
+Name=Server
+Comment=
+Exec=  python /home/pi/Cobalt/cobalt_script.py
+StartupNotify=false
+Terminal=true
+Hidden=false

@@ -1,0 +1,4 @@
+/etc/rc.local
+/home/pi/.config/autostart/server.desktop
+/home/pi/.config/lxsession/LXDE-pi/autostart
+/boot/config.txt
