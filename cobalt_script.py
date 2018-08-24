@@ -106,7 +106,7 @@ def get_fuel_reading():
   frequencies[frequencies_index%frequencies_length] =  fuelsensor_input.frequency()
   frequencies_index = (frequencies_index + 1)
   frequency = reduce(lambda x, y: x + y, frequencies) / len(frequencies)
-  fuel_reading = round(109*(4650-frequency)/(4650-3000))
+  fuel_reading = round(109*(4500-frequency)/(4500-3600))
   if fuel_reading < 0:
     return 0
   else:
