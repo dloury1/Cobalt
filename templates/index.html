@@ -23,6 +23,7 @@
       var xmlhttp = new XMLHttpRequest();
       var url = "http://127.0.0.1:5000/engine";
       var time = 0;
+      var screen_state = 0; // 0 -> Normal View and 1 -> Detail View
       xmlhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             var myArr = JSON.parse(this.responseText);
@@ -42,7 +43,13 @@
         return (hour < 10 ? "0" : "") + hour + "h " + (min < 10 ? "0" : "") + min+ "m";
       }
 
-      function renderDetailScreen(engine_data) {
+      function mouseClicked(){
+        screen_state = (screen_state + 1)%2;
+      }
+
+      document.body.addEventListener('click', mouseClicked, true); 
+
+      function renderDetailScreen(engine_data, ctx) {
         FUEL = engine_data["FUEL"];
         POWER = engine_data["PWR"];
         RPM = engine_data["RPM"];
@@ -63,11 +70,10 @@
         EGT5 = engine_data["EGT5"];
         EGT6 = engine_data["EGT6"];
         ERRORS = engine_data["ERRORS"];
-        var c = document.getElementById("myCanvas");
-        var ctx = c.getContext("2d");
     
         ctx.clearRect(0, 0, 480, 796);
         ctx.textAlign="center";
+        ctx.beginPath();
         // FUEL
         ctx.rect(20,20,215,250);
         ctx.rect(20,70,215,1);
@@ -106,7 +112,8 @@
           ctx.fillStyle = "red";
           if (blink < 5) {
             ctx.textAlign="left";
-            ctx.fillText(ERRORS[error_index],275,55);  
+            ctx.font = "11.5px Arial";
+            ctx.fillText(ERRORS[error_index],255,55);
             ctx.textAlign="center";
           }
           
@@ -503,11 +510,65 @@
         ctx.fillText("420",208, 577);
       }
 
+      function renderNormalScreen(engine_data, ctx){
+        FUEL = engine_data["FUEL"];
+        POWER = engine_data["PWR"];
+        
+        ctx.textAlign="center";
+        ctx.beginPath();
+        // FUEL
+        ctx.rect(20,20,440,360);
+        ctx.rect(20,70,440,1);
+        ctx.font = "25px Arial";
+        ctx.fillStyle = "#C2D49D";
+        ctx.textAlign="left";
+        ctx.fillText("FUEL",50,55);
+        
+        grd = ctx.createLinearGradient(0, 100, 0, 310);
+        grd.addColorStop(1, "black");
+        if (FUEL < 20) {
+         grd.addColorStop(0, "red");
+        } else if (FUEL >= 20 && FUEL < 40) {
+         grd.addColorStop(0, "yellow");
+        } else {
+         grd.addColorStop(0, "#C2D49D");
+        }
+        ctx.fillStyle = grd;
+        ctx.fillRect(100, 310-FUEL*2, 75, FUEL*2);
+        ctx.rect(100,110,75,200);
+        ctx.font = "38px Arial";
+        ctx.fillStyle = "#C2D49D";
+        ctx.textAlign="center";
+        ctx.fillText(decToTime(FUEL/14.2),300,220)
+
+
+        // POWER
+        ctx.rect(20,398,440,360);
+        ctx.rect(20,448,440,1);
+        ctx.fillStyle = "#C2D49D";
+        ctx.font = "25px Arial";
+        ctx.textAlign="left";
+        ctx.fillText("POWER CRUISE",50,433);  
+        ctx.font = "100px Arial";
+        ctx.fillStyle = "#C2D49D";
+        ctx.textAlign="center";
+        ctx.fillText(Math.round(POWER)+"%",230,633)
+
+        ctx.strokeStyle="gray";
+        ctx.stroke();
+
+      }
 
       function renderEngineData(engine_data) {
-        if (engine_data["ERRORS"].length > 0) {
-          renderDetailScreen(engine_data);
-        }     
+        var c = document.getElementById("myCanvas");
+        var ctx = c.getContext("2d");
+        ctx.clearRect(0, 0, 480, 796);
+
+        if (engine_data["ERRORS"].length > 0 || screen_state == 1) {
+          renderDetailScreen(engine_data, ctx);
+        } else {
+          renderNormalScreen(engine_data, ctx);
+        }
 
       }
     </script>
