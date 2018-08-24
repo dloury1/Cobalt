@@ -19,7 +19,58 @@ port = serial.Serial("/dev/serial0", baudrate=19200, timeout=3.0)
 engine_data = {'FUEL': 0, 'PWR': 0, 'RPM': 0, 'MANP': 0, 'FUELP': 0, 
       'OILP': 0, 'OILT': 0, 'CHT1': 0, 'CHT2': 0,  'CHT3': 0, 
       'CHT4': 0, 'CHT5': 0, 'CHT6': 0, 'EGT1': 0, 'EGT2': 0, 
-      'EGT3': 0, 'EGT4': 0, 'EGT5': 0, 'EGT6': 0, 'ERROR':[] }
+      'EGT3': 0, 'EGT4': 0, 'EGT5': 0, 'EGT6': 0, 'ERRORS':[] }
+
+faults = {  0: "Manifold Pressure Sensor Fault",
+            1: "Fuel Pressure Sensor Fault",
+            2: "Manifold Temperature Sensor Fault",
+            3: "CHT Sensor Fault",
+            4: "EGT Sensor Fault",
+            5: "Fuel Boost Pump Short Circuit Detected",
+            6: "CHT Overtemp",
+            7: "EGT Overtemp",
+            8: "Fuel Pressure In-Range Fault",
+            9: "Engine Timing Fault",
+            10: "Mechanical Fuel Pump Failure",
+            11: "Dead Cylinder Detected",
+            12: "Lean Misfire Detected",
+            13: "Cylinder in Backup Control Mode" ,
+            14: "FADEC Channel Disabled",
+            15: "FADEC Low Voltage Fault",
+            16: "Oil Pressure Sensor Fault",
+            17: "Oil Temperature Sensor Fault",
+            18: "TIT Sensor Fault",
+            25: "OAP Sensor Fault",
+            48: "Engine Overspeed",
+            49: "High Oil T emperature",
+            50: "Low Idle Oil Pressure",
+            51: "Low Oil Pressure",
+            52: "High Oil Pressure",
+            53: "Cylinder head Temperature Overtemp",
+            54: "Exhaust Gas Temperature Overtemp ",
+            55: "TIT Continuous Overtemp",
+            56: "TIT Maximum Overtemp",
+            57: "Overboost",
+            58: "Maximum Overboost",
+            59: "Hot Head Operation",
+            60: "Low Takeoff Oil Temperature",
+            61: "Low Takeoff CHT",
+            63: "Invalid Channel Configuration",
+}
+
+
+def get_errors(number):
+  try:
+    number = int(number.encode('hex'), 16)
+  except ValueError:
+    print 'Invalid value!'
+    return -0.1
+  ret = []
+  for i, fault in faults.items():
+      if (number & (1 << i)):
+        ret.append(fault)
+  return ret
+
 
 
 def convert(number, sign, len, fp_index):
@@ -86,6 +137,7 @@ def update_sbc_stream():
         engine_data['EGT4'] = convert(sbc_stream[37:39], False, 16, 4)
         engine_data['EGT5'] = convert(sbc_stream[39:41], False, 16, 4)
         engine_data['EGT6'] = convert(sbc_stream[41:43], False, 16, 4)
+        engine_data['ERRORS'] = get_errors(sbc_stream[87:95])
         file.write(time.strftime("%Y/%m/%d-%H:%M:%S::"))
         file.write(json.dumps(engine_data))
         file.write("\n")
@@ -96,12 +148,11 @@ def update_sbc_stream():
       time_since_last_read = time_since_last_read + 1
 
     if time_since_last_read > 10:
-      engine_data['ERROR'] = ["No data in 3 seconds"]
+      engine_data['ERRORS'] = ["No data in "+ str(time_since_last_read/10) +" seconds"]
       file.write(time.strftime("%Y/%m/%d-%H:%M:%S::"))
       file.write("\n")
       file.write(json.dumps(engine_data))
       file.write("\n")
-      time_since_last_read = 0
 
 class Engine(Resource):
     def get(self):
