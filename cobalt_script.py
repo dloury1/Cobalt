@@ -127,7 +127,6 @@ def update_sbc_stream():
       sbc_stream = port.read(3)
       if sbc_stream[0].encode("hex") == "fd" and sbc_stream[1].encode("hex") == "fe" and sbc_stream[2].encode("hex") == "ff":
         sbc_stream = sbc_stream + port.read(94)
-        engine_data['FUEL'] = 0
         engine_data['PWR'] = convert(sbc_stream[3:5], False, 16, 9)
         engine_data['RPM'] = convert(sbc_stream[7:9], False, 16, 4)
         engine_data['MANP'] = convert(sbc_stream[9:11], False, 16, 8)
